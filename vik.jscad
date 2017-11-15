@@ -1,4 +1,7 @@
 "use strict";
+
+// TODO: currently the openjscad program errs trying to output this, but the viewer can do it... !?
+
 // TODO: convex minkowski
 // TODO: convex expand in terms of convex minkowski
 // TODO: convex expand using a clever patch
