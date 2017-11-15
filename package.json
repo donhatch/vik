@@ -1,0 +1,15 @@
+{
+  "name": "vik",
+  "version": "1.0.0",
+  "description": "a physical projection of the 2x2x2x2 magic cube",
+  "main": "entry_point.js",
+  "scripts": {
+    "test": "echo this is the test command"
+  },
+  "author": "Don Hatch",
+  "license": "MIT",
+  "dependencies": {
+    "@jscad/openjscad": "^1.3.0"
+  },
+  "repository": {}
+}
