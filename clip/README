@@ -1,0 +1,131 @@
+TODO: reorganize these notes, they are totally stale
+
+=======================================
+OpenJSCAD.org notes
+
+- Most instructions are either in the main README.md
+  or in the wiki book (but some things are still not obvious).
+
+- The global functions intersection,difference give colors;
+  the member functions intersect,subtract do not.
+
+Q: how to develop the openjscad command?
+A: Do the following:
+     npm install
+     npm link
+   Then changes made to .js files it uses will be visible when running openjscad.
+   If changes are in some other module like csg, then follow specific instructions
+   for that in README.md.
+
+Q: how to develop the main ui page?
+A: changes are generally reflected in the web server:
+       npm run start-dev   # starts it on port 8080
+   or, slower:
+       npm run build-web
+       python -m SimpleHTTPServer 8002   # or whatever
+   (I don't know what build-opt is-- "with options"? I don't know what that means.)
+
+=======================================
+Isolating the clip, first attempt:
+  - started with:
+      2x2x2x2Unit-03.00.stl.zip
+    unzipped it into:
+      2x2x2x2Unit-03.00.stl
+  - dragged-and-dropped it to openjscad.org ui,
+    copy-pasted the jscad stuff from the RHS of the ui into a file:
+      2x2x2x2Unit-03.00.stl.jscad
+  - I didn't understand that openjscad.org was a different website from the one I was using,
+    so added a "polyhedron" shim:
+      2x2x2x2Unit-03.00.stl.jscad.tweaked.jscad
+  - and then added further statements to extract just the clip:
+      2x2x2x2Unit-03.00.stl.jscad.tweaked.clipOnly.jscad
+  - fed that back into the ui, saved to:
+      2x2x2x2Unit-03.00.clipOnly.stl
+    also copy-pasted the LHS,
+    added "polyhedron" shim,
+    and fixed orientations (!?), to produce:
+      2x2x2x2Unit-03.00.clipOnly.stl.jscad
+
+I think I should be able to do it simpler, now that I understand openjscad.org is
+a different, enhanced, repo.
+Can I do it via the command line?
+
+After filing & getting fixed:
+  https://github.com/jscad/OpenJSCAD.org/issues/308
+  https://github.com/jscad/OpenJSCAD.org/issues/309
+  https://github.com/jscad/OpenJSCAD.org/issues/310
+I can now isolate the clip from the command line:
+  openjscad 2x2x2x2Unit-03.00.stl -o 2x2x2x2Unit-03.00.stl.jscad
+  cp 2x2x2x2Unit-03.00.stl.jscad 2x2x2x2Unit-03.00.stl.tweakedToDoClipOnly.jscad
+  ... added statements to extract just the clip ...
+  openjscad 2x2x2x2Unit-03.00.stl.tweakedToDoClipOnly.jscad -o 2x2x2x2Unit-03.00.clipOnly.stl -of stla
+(and it's bad already-- some tri orientations backwards)
+  openjscad 2x2x2x2Unit-03.00.clipOnly.stl -o 2x2x2x2Unit-03.00.clipOnly.stl.jscad
+But some of the triangles are backwards!!!  Need to file bug.
+In the meantime, fix orientations...
+  cp 2x2x2x2Unit-03.00.clipOnly.stl.jscad 2x2x2x2Unit-03.00.clipOnly.stl.jscad.orientationsFixed.jscad
+  ... added statements to merge dup verts, then to make polygons coherent ...
+That looks good in the ui.
+  openjscad 2x2x2x2Unit-03.00.clipOnly.stl.jscad.orientationsFixed.jscad -o 2x2x2x2Unit-03.00.clipOnly.stl.jscad.orientationsFixed.jscad.stl -of stla
+ARGH!  So just converting to stl makes it look crappy, again, in the ui???  Wtf?
+So that means any time I want to do any operations on it, I have to start by fixing it???
+File bug!
+  cp 2x2x2x2Unit-03.00.clipOnly.stl.jscad.orientationsFixed.jscad.stl 2x2x2x2Unit-03.00.clipOnly.stl.jscad.orientationsFixed.jscad.stl.jscad
+
+TODO: make a utility that takes an stl file and fixes the orientations, and spits it back out.  Maybe?
+  Call it stlfix.
+  or, just hack up the existing output function in openjscad?  not sure.
+
+  Actually, simplest way would be to write some python, that takes stla and produces stla.
+  (Actually made it to take stl binary or ascii).
+  stlFixTriangleOrientations.py
+
+ARGH! It's not coming out incoherent?
+So what went wrong?  Was it the stl reader?
+Q: are the normals ok?
+PA: no. if I'm looking at it correctly, some are sideways (even on triangles that aren't degenerate), and there are some degenerate trianges, too.
+So, make it fix the normals, as best it can.
+  ./stlFixTriangleOrientations.py < 2x2x2x2Unit-03.00.clipOnly.stl > 2x2x2x2Unit-03.00.clipOnly.normalsFixed.stl
+
+Ok, I think I do best if I grab it from the original stl before converting to jscad
+(the conversion to jscad is actually fine, but the conversion back out to stl adds weirdness!)
+So, wrote stlClipTopOnly.py.
+  ./stlClipTopOnly.py 2 < 2x2x2x2Unit-03.00.stl > 2x2x2x2Unit-03.00.stl.clipTopOnly.stl
+  openjscad 2x2x2x2Unit-03.00.stl.clipTopOnly.stl -o 2x2x2x2Unit-03.00.stl.clipTopOnly.stl.jscad
+  cp 2x2x2x2Unit-03.00.stl.clipTopOnly.stl.jscad 2x2x2x2Unit-03.00.stl.clipTopOnly.stl.jscad.extruded.jscad
+  ... edited it to add extrusion ...
+
+
+Q: what's the best way of viewing a damn stl file?
+   inadequate method #1: just view it
+        fine but the problem (reversed faces) doesn't happen,
+        and I can't do further processing on it
+        like I need to.
+   inadequate method #1: convert to openjscad and view that
+        problem with that is, the conversion is lossy.
+        viewing the result has bad tris, even though viewing the STL
+        doesn't have bad tris.
+
+Q: can I get OpenJSCad.org ui to show wireframe?
+
+Q: omg what is all this CRAP in min.html,options.html,min.css,opt.css,min.js,...
+   I have NO FUCKING IDEA how I'm supposed to work a viewer,
+   other than by hacking up source code and having very little effect.
+   This is a completely rotten development environment :-(
+
+
+OH OH OH!  there are instructions in README.md!!!
+Deserialization isn't currently documented well, but there's an example here.
+  https://stackoverflow.com/questions/41453245/how-to-convert-stl-files-into-a-x3d-file-using-java-javascript
+
+
+Sat Nov 11 07:44:41 PST 2017
+  Ok let's start again.
+  Write some utility programs:
+    isolateClip.js -- got it!
+    randomlyColorize.js -- note that this prevents too-fine reteselletion in subsequent operations for some reason??
+    center.js
+  with some helpers:
+    getCommonArgs.js
+    getCompilable.js
+
