@@ -701,7 +701,7 @@
       console.log("        polygonsOut.length = "+polygonsOut.length);
       console.log("      done joining verts.");
       return [pointsOut,polygonsOut];
-    };  // joinPoints
+    };  // joinVerts
 
     let joinPolygons = (polygonsIn) => {
       let verboseLevel = 1;

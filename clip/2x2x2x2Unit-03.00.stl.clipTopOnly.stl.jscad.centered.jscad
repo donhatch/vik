@@ -701,7 +701,7 @@
       console.log("        polygonsOut.length = "+polygonsOut.length);
       console.log("      done joining verts.");
       return [pointsOut,polygonsOut];
-    };
+    };  // joinVerts
 
     let joinPolygons = (polygonsIn) => {
       let verboseLevel = 1;
@@ -762,7 +762,7 @@
       if (verboseLevel >= 1) console.log("        polygonsOut.length = "+polygonsOut.length);
       if (verboseLevel >= 1) console.log("      done.");
       return polygonsOut;
-    };
+    };  // joinPolygons
     [spec.points,spec.polygons] = joinVerts(spec.points, spec.polygons);
     spec.polygons = joinPolygons(spec.polygons);
 
@@ -802,47 +802,4 @@
   //console.log("path = "+JSON.stringify(path));
 
   return path.translate([-9.5,-9.5,0]);
-
-  //let widthOfTheExtrusion = .0001; // in the z=0 plane (wtf does this mean?)
-  let widthOfTheExtrusion = .0001; // in the z=0 plane (wtf does this mean?)
-  let heightOfTheExtrusion = 2.5; // in the z direction (wtf does this mean?)
-  let roundResolution = 0;
-  let roundEnds = true;
-
-  let answer;
-  if (doRectangular) {
-    answer = path.rectangularExtrude(widthOfTheExtrusion, heightOfTheExtrusion, roundResolution, roundEnds);
-  } else {
-    // doesn't work: "Uncaught TypeError: s.extrude is not a function", if path is a CSG.Path2D
-    answer = linear_extrude({height: heightOfTheExtrusion}, path);
-  }
-
-  if (true) {
-    // heights: 2.6, 3.4, 5.1
-    // so the extrusion height is 5.1-2.6 = 2.5
-    // and subtract something whose top is 3.4.
-    answer = answer.translate([0,0,2.6]);
-    let knife = cube({size:20}).rotateZ(45).translate([0,0,-20+3.4]);
-
-    //knife = cube().subtract(cube());  // empty csg
-
-    //answer = answer.union(knife);
-    answer = answer.subtract(knife);
-
-    // Interesting-- when we do this,
-    // it adds a whole bunch of useless verts... same useless verts I was getting previously.
-    // In fact it happens even if I subtract an empty csg.
-  }
-
-  if (true) {
-    //answer = answer.center();
-    answer = answer.translate([-9.5,-9.5,0]);  // wtf? is there a bug?  oh, that's -9.5,-9.5,-9.5
-  }
-
-  if (true) {
-    answer = answer.union(answer.rotateZ(180).setColor([1,.5,0,.5]));
-  }
-
-
-  return answer;
 }
