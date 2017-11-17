@@ -36,7 +36,14 @@ Promise.all([jscad.compile(compilable, {}), jscad.compile(compilableClip, {})]).
   //process.stderr.write("answer = "+JSON.stringify(answer)+"\n");
 
   let clip = compiledClip[0];
-  let t = 13.75;
+
+  let modelWidth = 20; // hard-coded in vik.jscad
+  let t = modelWidth * Math.sqrt(.5);  // modelWidth=20 -> t=14.142135623730951
+  if (true) {  // TODO: the above isn't quite right, so fudge it.  TODO: figure out what the hell modelWidth meant.  OH I see, it empirically fitted it.
+     // just happens to be the amount vik.jscad reported that it scaled by?
+     t = 13.73866987452534;
+  }
+
   clip = clip.translate([t,t,1.5]);
 
   let clips = clip;
@@ -45,22 +52,46 @@ Promise.all([jscad.compile(compilable, {}), jscad.compile(compilableClip, {})]).
                 .union(clip.rotateZ(90).rotateY(90).rotateZ(90).rotateY(90));
   }
 
-  if (true) {
+  let rotate60about111 = object => {
     // rotate 60 degrees about 1,1,1, the stupid way:
     //     rotate 1,1,1 to z axis
     //     rotate 60 degrees about z axix
     //     rotate z axis to 1,1,1
-    clips = clips.rotateZ(45);  // rotate axis 1,1,1 to yz plane
-    clips = clips.rotateX(Math.atan2(Math.sqrt(2),1)/Math.PI*180); // rotate axis to +z
-    clips = clips.rotateZ(-60);
-    clips = clips.rotateX(-Math.atan2(Math.sqrt(2),1)/Math.PI*180);
-    clips = clips.rotateZ(-45);
+    object = object.rotateZ(45);  // rotate axis 1,1,1 to yz plane
+    object = object.rotateX(Math.atan2(Math.sqrt(2),1)/Math.PI*180); // rotate axis to +z
+    object = object.rotateZ(-60);
+    object = object.rotateX(-Math.atan2(Math.sqrt(2),1)/Math.PI*180);
+    object = object.rotateZ(-45);
+    return object;
+  };
+
+  if (true) {
+    clips = rotate60about111(clips);
+  }
+
+  if (false) {
+    // just kill it.
+    process.stderr.write("Killing it...\n");
+    answer = answer.subtract(answer);
+    process.stderr.write("    done.\n");
   }
 
   if (true) {
     process.stderr.write("Unioning with clips...");
     answer = answer.union(clips);
     process.stderr.write("    done.\n");
+  }
+
+  if (false) {
+    // To get a sense of what modelWidth is, since I forgot,
+    // put in a transparent cube.
+    //let theCube = cube(); // inside .jscad
+    let theCube = csg.cube().translate([1,1,1]).scale([.5,.5,.5]); // outside .jscad
+    theCube = theCube.setColor([1,.5,0,.1]);
+    theCube = theCube.scale([modelWidth,modelWidth,modelWidth]);
+    theCube = theCube.scale([Math.sqrt(.5),Math.sqrt(.5),Math.sqrt(.5)]);
+    theCube = rotate60about111(theCube);
+    answer = answer.union(theCube);
   }
 
 
