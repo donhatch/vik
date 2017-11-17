@@ -1,5 +1,8 @@
-let getCommonArgs = function(argv) {
-  let inputFileName = undefined;
+let getCommonArgs = function(argv, minInputFiles, maxInputFiles) {
+  if (arguments.length != 3) {
+    throw new Error('bad number of args '+arguments.length+' to getCommonArgs(), expected 2');
+  }
+  let inputFileNames = [];
   let outputFormat = undefined;
   let outputFileName = undefined;
   // process.argv[0] = '/path/to/node'
@@ -23,17 +26,19 @@ let getCommonArgs = function(argv) {
       }
       outputFormat = process.argv[argi];
     } else {
-      if (inputFileName !== undefined) {
-        process.stderr.write("Error: more than one input file name specified: "+JSON.stringify(inputFileName)+", "+JSON.stringify(process.argv[argi])+"\n");
-        process.exit(1);
-      }
-      inputFileName = process.argv[argi];
+      inputFileNames.push(process.argv[argi]);
     }
   }
-  if (inputFileName === undefined) {
-    process.stderr.write("Error: no input file name specified\n");
+  if (inputFileNames.length < minInputFiles || inputFileNames.length > maxInputFiles) {
+    // XXX TODO: was better in some cases:  process.stderr.write("Error: more than one input file name specified: "+JSON.stringify(inputFileName)+", "+JSON.stringify(process.argv[argi])+"\n");
+    if (minInputFiles === maxInputFiles) {
+      process.stderr.write("Error: got "+inputFileNames.length+" input file"+(inputFileNames.length==1?'':'s')+", expected "+minInputFiles+"\n");
+    } else {
+      process.stderr.write("Error: got "+inputFileNames.length+" input file"+(inputFileNames.length==1?'':'s')+", expected between "+minInputFiles+" and "+maxInputFiles+"\n");
+    }
     process.exit(1);
   }
+
   if (outputFileName === undefined) {
     process.stderr.write("Error: no output file name specified\n");
     process.exit(1);
@@ -62,7 +67,7 @@ let getCommonArgs = function(argv) {
     }
     outputFormat = match[1].toLowerCase();
   }
-  return [inputFileName, outputFormat, outputFileName];
+  return [inputFileNames, outputFormat, outputFileName];
 };  // getCommonArgs
 
 module.exports = getCommonArgs;

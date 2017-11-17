@@ -23,7 +23,7 @@ if (process.argv.length < 3) {
 }
 
 const getCommonArgs = require('./getCommonArgs');
-let [inputFileName, outputFormat, outputFileName] = getCommonArgs(process.argv);
+let [[inputFileName], outputFormat, outputFileName] = getCommonArgs(process.argv, 1, 1);
 
 const jscad = require('@jscad/openjscad');
 const csg = require('@jscad/csg').CSG;
