@@ -821,8 +821,12 @@ function main() {
                          .union(dips.rotateY(-90).rotateZ(-90));
       }
 
+      console.log("    unioning with pips...");
       clay = clay.union(pips);
+      console.log("    done unioning with pips.");
+      console.log("    subtracting dips...");
       clay = clay.subtract(dips);
+      console.log("    done subtracting dips.");
     }
 
     if (true) {
@@ -965,6 +969,25 @@ function main() {
       answer = answer.union(answer.rotateZ(90));
       answer = answer.union(answer.rotateZ(180));
       answer = answer.union(answer.rotateX(180));
+    }
+
+    if (false) {
+      // To get a sense of what modelWidth is, since I forgot,
+      // put in a transparent cube.
+      let theCube = cube();
+      theCube = theCube.setColor([1,.5,0,.1]);
+      theCube = theCube.scale([modelWidth,modelWidth,modelWidth]);
+      theCube = theCube.scale([Math.sqrt(.5),Math.sqrt(.5),Math.sqrt(.5)]);
+      let rotate60about111 = object => {
+        object = object.rotateZ(45);  // rotate axis 1,1,1 to yz plane
+        object = object.rotateX(Math.atan2(Math.sqrt(2),1)/Math.PI*180); // rotate axis to +z
+        object = object.rotateZ(-60);
+        object = object.rotateX(-Math.atan2(Math.sqrt(2),1)/Math.PI*180);
+        object = object.rotateZ(-45);
+        return object;
+      };
+      theCube = rotate60about111(theCube);
+      answer = answer.union(theCube);
     }
 
     return answer;
