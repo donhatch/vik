@@ -45,7 +45,7 @@ function main() {
     let thickWallThickness = 2.675;  // was 2
 
     let pipDiameter = 1.5;  // was 1
-    let pipDiskRadiusDegrees = 60.;
+    let pipDiskRadiusDegrees = 60.0;
 
     let backwardCompatibleWithFirstPrint = false;
     if (backwardCompatibleWithFirstPrint) {
@@ -54,7 +54,7 @@ function main() {
       // and we'll do some pip position adjustment later too
     }
 
-    let pipSphereRadius = (pipDiameter/2) / Math.sin(pipDiskRadiusDegrees/180.*Math.PI);
+    let pipSphereRadius = (pipDiameter/2) / Math.sin(pipDiskRadiusDegrees/180.0*Math.PI);
 
     //let thinWallThickness = .7;  // .7 is minimum allowed
     let thinWallThickness = .675;  // .7 is minimum allowed
@@ -163,15 +163,15 @@ function main() {
     };
     let angleBetweenUnitVectors = (u,v) => {
       if (u.dot(v) < 0.0) {
-        return Math.PI - 2*Math.asin(u.plus(v).length()/2.);
+        return Math.PI - 2*Math.asin(u.plus(v).length()/2.0);
       } else {
-        return 2*Math.asin(u.minus(v).length()/2.);
+        return 2*Math.asin(u.minus(v).length()/2.0);
       }
     };  // angleBetweenUnitVectors
-    let sin_over_x = x => x==0.0 ? 1.0 : Math.sin(x)/x;
+    let sin_over_x = x => x===0.0 ? 1.0 : Math.sin(x)/x;
     // ang must be angleBetweenUnitVectors(u,v)
     let slerp = (u,v,ang,t) => {
-      //CHECK(arguments.length == 4); // wait a minute, this doesn't hold for arrow functions??
+      //CHECK(arguments.length === 4); // wait a minute, this doesn't hold for arrow functions??
       let denominator = sin_over_x(ang);
       let a = sin_over_x((1-t)*ang)/denominator * (1-t);
       let b = sin_over_x(t*ang)/denominator * t;
@@ -190,16 +190,16 @@ function main() {
 
     let rotateCSGtakingUnitVectorToUnitVector = (csg, from, to) => {
       // only works when from is z axis.
-      CHECK(from[0] == 0);
-      CHECK(from[1] == 0);
-      CHECK(from[2] == 1);
-      if (to[0] == 0 && to[1] == 0) {
+      CHECK(from[0] === 0);
+      CHECK(from[1] === 0);
+      CHECK(from[2] === 1);
+      if (to[0] === 0 && to[1] === 0) {
         return to[2] >= 0 ? csg : csg.rotateX(180);
       }
       // XXX TODO: should use parallel transport math (2 householder reflections) instead of this
       let lat = Math.atan2(to[2], Math.hypot(to[0], to[1]));
       let lng = Math.atan2(to[1], to[0]);
-      csg = csg.rotateY(90. - lat/Math.PI*180);  // Z axis towards X axis
+      csg = csg.rotateY(90.0 - lat/Math.PI*180);  // Z axis towards X axis
       csg = csg.rotateZ(lng/Math.PI*180);  // X axis towards Y axis
       return csg;
     };
@@ -215,7 +215,7 @@ function main() {
       let cyl = CSG.cylinder({
         start: [0,0,0],
         end: [0,0,1],
-        radius: cylinderDiameter/2.,
+        radius: cylinderDiameter/2.0,
         resolution: cylinderResolution,
       });
       cyl = cyl.scale([1,1,len(vmv(end, start))]);
@@ -344,12 +344,12 @@ function main() {
               edgeKeyToEdgeIndex[oppositeEdgeKey] = edgeIndex+1;
             }
             let oppositeEdgeIndex = edgeIndex^1;
-            CHECK(edgeKeyToEdgeIndex[edgeKey] == edgeIndex);
-            CHECK(edgeKeyToEdgeIndex[oppositeEdgeKey] == oppositeEdgeIndex);
-            CHECK(e2v[edgeIndex][0] == v0);
-            CHECK(e2v[edgeIndex][1] == v1);
-            CHECK(e2v[oppositeEdgeIndex][0] == v1);
-            CHECK(e2v[oppositeEdgeIndex][1] == v0);
+            CHECK(edgeKeyToEdgeIndex[edgeKey] === edgeIndex);
+            CHECK(edgeKeyToEdgeIndex[oppositeEdgeKey] === oppositeEdgeIndex);
+            CHECK(e2v[edgeIndex][0] === v0);
+            CHECK(e2v[edgeIndex][1] === v1);
+            CHECK(e2v[oppositeEdgeIndex][0] === v1);
+            CHECK(e2v[oppositeEdgeIndex][1] === v0);
             f2e[f2e.length-1].push(edgeIndex);
             e2f[edgeIndex] = p;
             // e2f[oppositeEdgeIndex] may not be set yet
@@ -389,7 +389,7 @@ function main() {
         }
         for (let iEdge = 0; iEdge < e2v.length; ++iEdge) {
           let v0 = e2v[iEdge][0];
-          if (v2e[v0].length == 0) {
+          if (v2e[v0].length === 0) {
             v2e[v0].push(iEdge);
             for (let jEdge = e2next[iEdge^1];
                  jEdge != iEdge;
@@ -560,7 +560,7 @@ function main() {
 
           for (let iy = 0; iy < gridPoints.length; ++iy) {
             for (let ix = 0; ix < gridPoints[iy].length; ++ix) {
-              if (ix == 0 || iy == 0 || ix == gridPoints[iy].length-1 || iy == gridPoints.length-1) {
+              if (ix === 0 || iy === 0 || ix === gridPoints[iy].length-1 || iy === gridPoints.length-1) {
                 CHECK(gridPoints[iy][ix] !== null);
               } else {
                 CHECK(gridPoints[iy][ix] === null);
@@ -582,11 +582,11 @@ function main() {
               let b = gridPoints[iy][ix+1];
               let c = gridPoints[iy+1][ix+1];
               let d = gridPoints[iy+1][ix];
-              if (c == d) {
+              if (c === d) {
                 answer.push([a,b,c]);
-              } else if (b == c) {
+              } else if (b === c) {
                 answer.push([a,b,d]);
-              } else if (a == d) {
+              } else if (a === d) {
                 answer.push([a,b,c]);
               } else {
                 let volume = sixTimesTetVolume(a,b,c,d);
@@ -771,7 +771,7 @@ function main() {
       // Try to place the dips/pips.
       let facePlane = planes[4];
       let [faceNormal,faceOffset] = facePlane;
-      let elevationFudge = Math.cos(pipDiskRadiusDegrees/180.*Math.PI) * pipSphereRadius;
+      let elevationFudge = Math.cos(pipDiskRadiusDegrees/180.0*Math.PI) * pipSphereRadius;
       console.log("elevationFudge = "+elevationFudge);
       let pips = [];
       let dips = [];
@@ -853,7 +853,7 @@ function main() {
           let cyl = CSG.cylinder({
             start: [x,y,thinWallThickness],  // default start is [0,-1,0]
             end: [x,y,thinWallThickness+cylHeight], // default end is [0,1,0]
-            radius: cylinderDiameter/2., // default radius is 1
+            radius: cylinderDiameter/2.0, // default radius is 1
             resolution: cylinderResolution, // default resolution is 32
 
             //center: true, // default: center:false   XXX doesn't seem to matter?
@@ -884,7 +884,7 @@ function main() {
           let cyl = makeCylinderTheWayIThoughtItWasSupposedToWork({
             start: start,
             end: end,
-            radius: cylinderDiameter/2.,
+            radius: cylinderDiameter/2.0,
             resolution: cylinderResolution,
           });
 
@@ -913,7 +913,7 @@ function main() {
           let cyl = makeCylinderTheWayIThoughtItWasSupposedToWork({
             start: start,
             end: end,
-            radius: cylinderDiameter/2.,
+            radius: cylinderDiameter/2.0,
             resolution: cylinderResolution,
           });
 
