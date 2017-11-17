@@ -31,13 +31,14 @@ function main() {
     // Melinda's width is 17.52 mm (in some early model)
     let modelWidth = 20;
 
-    //let separation = 0.0;  // to put corner at origin
+    let separation = 0.0;  // to put corner at origin
     //let separation = 3;
     //let separation = -.0001;
     //let separation = 1.5;
-    let separation = -modelWidth;  // to center it, roughly
+    //let separation = -modelWidth;  // to center it, roughly
 
     let doPreRound = true;
+
     let preRoundRadius = .75;
     //let preRoundRes = 20;
     let preRoundRes = 40; // looks better but takes a while.  faster since using my own rounding
