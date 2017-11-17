@@ -31,7 +31,7 @@ function main() {
     // Melinda's width is 17.52 mm (in some early model)
     let modelWidth = 20;
 
-    //let separation = 0.;  // to put corner at origin
+    //let separation = 0.0;  // to put corner at origin
     //let separation = 3;
     //let separation = -.0001;
     //let separation = 1.5;
@@ -69,7 +69,7 @@ function main() {
 
 
     // Note, scaleFudge other than 1 doesn't really work since the placements of dips/pips/cyls is still in the original space
-    let scaleFudge = 1.;
+    let scaleFudge = 1.0;
     {
       modelWidth *= scaleFudge;
       separation *= scaleFudge;
@@ -84,7 +84,7 @@ function main() {
     //==================================================
 
     if (swissCheese) {
-      thinWallThickness = 0.;
+      thinWallThickness = 0.0;
     }
 
 
@@ -108,7 +108,7 @@ function main() {
       return answer;
     };
     let dot = (v0,v1) => {
-      let answer = 0.;
+      let answer = 0.0;
       for (let i = 0; i < v0.length; ++i) {
         answer += v0[i] * v1[i];
       }
@@ -118,7 +118,7 @@ function main() {
     let len = v => Math.sqrt(len2(v));
     let normalizedVecAsArray = v => sxv(len(v), v);
 
-    let normalizedCsgVector = v => v.scale(1./v.length());
+    let normalizedCsgVector = v => v.scale(1.0/v.length());
 
     // determinant of matrix whose rows are:
     //      b-a
@@ -146,8 +146,9 @@ function main() {
       let c = Math.cos(degrees/180*Math.PI);
       return [[normal[0]*c - normal[1]*s, normal[0]*s + normal[1]*c, normal[2]], offset];
     };
+    let sqr = x => x*x;
     let translatePlane = function([normal,offset], [dx,dy,dz]) {
-      let len2 = normal[0]**2 + normal[1]**2 + normal[2]**2;
+      let len2 = sqr(normal[0]) + sqr(normal[1]) + sqr(normal[2]);
 
       let len = Math.sqrt(len2);
       let point = [offset*normal[0]/len, offset*normal[1]/len, offset*normal[2]/len];
@@ -161,13 +162,13 @@ function main() {
       return [normal, offset*s];
     };
     let angleBetweenUnitVectors = (u,v) => {
-      if (u.dot(v) < 0.) {
+      if (u.dot(v) < 0.0) {
         return Math.PI - 2*Math.asin(u.plus(v).length()/2.);
       } else {
         return 2*Math.asin(u.minus(v).length()/2.);
       }
     };  // angleBetweenUnitVectors
-    let sin_over_x = x => x==0. ? 1. : Math.sin(x)/x;
+    let sin_over_x = x => x==0.0 ? 1.0 : Math.sin(x)/x;
     // ang must be angleBetweenUnitVectors(u,v)
     let slerp = (u,v,ang,t) => {
       //CHECK(arguments.length == 4); // wait a minute, this doesn't hold for arrow functions??
@@ -589,7 +590,7 @@ function main() {
                 answer.push([a,b,c]);
               } else {
                 let volume = sixTimesTetVolume(a,b,c,d);
-                if (volume < 0.) {
+                if (volume < 0.0) {
                   answer.push([a,b,c]);
                   answer.push([a,c,d]);
                 } else {
@@ -622,7 +623,7 @@ function main() {
 
     if (false) {
       let A = CSG.cube({
-        radius: 1./3,
+        radius: 1.0/3,
       });
       let radius = .1;
       let log2resolution = 4;
@@ -648,7 +649,7 @@ function main() {
 
     // Start with 1/3 of the planes of the outer polyhedron...
     let planes = [
-        [[0.3333333333333333,0.6666666666666667,0.6666666666666667],1.], // corner
+        [[0.3333333333333333,0.6666666666666667,0.6666666666666667],1.0], // corner
         [[0.5773502691896258,0.5773502691896258,0.5773502691896258],0.8909765116357686], // face
         [[0.5,0.5,0.7071067811865475],0.9667811436055143], // frontishEdge
         [[0.5,0.7071067811865475,0.5],0.9667811436055143], // toppishEdge
@@ -748,7 +749,7 @@ function main() {
       planes[i] = scalePlane(planes[i], scale);
     }
 
-    if (doPreRound && preRoundRadius > 0.) {
+    if (doPreRound && preRoundRadius > 0.0) {
       console.log("    starting pre-round");
       clay = clay.contract(preRoundRadius, preRoundRes);
       console.log("    halfway done with pre-round");
