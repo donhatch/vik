@@ -30,6 +30,10 @@ let getCommonArgs = function(argv) {
       inputFileName = process.argv[argi];
     }
   }
+  if (inputFileName === undefined) {
+    process.stderr.write("Error: no input file name specified\n");
+    process.exit(1);
+  }
   if (outputFileName === undefined) {
     process.stderr.write("Error: no output file name specified\n");
     process.exit(1);

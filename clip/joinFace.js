@@ -3,6 +3,10 @@
 // This was supposed to just be a function to join a face,
 // but I can't seem to dump that out without getting it weirdly retessellated.
 // So, added the extrusion and subtraction here too.
+// XXX currently still gets weirdly retesselated :-(
+//
+// ./joinFace.js 2x2x2x2Unit-03.00.stl.clipTopOnly.stl -o 2x2x2x2Unit-03.00.clip.centered.floored.amf
+
 
 let CHECK = function(cond) {
   if (arguments.length !== 1) {
@@ -280,12 +284,19 @@ jscad.compile(compilable, {}).then(compiled => {
       }
 
       if (true) {
-        answer = answer.translate([-9.5,-9.5,0]);
+        // drop it to the floor
+        answer = answer.translate([0,0,-2.6]);
       }
 
       if (true) {
-        answer = answer.union(answer.rotateZ(180).setColor([1,.5,0,.5]));
-        //answer = answer.intersect(answer.rotateZ(180).setColor([1,.5,0,.5]));
+        // center it  (necessary if we're going to combine with its mirror image)
+        answer = answer.translate([-9.5,-9.5,0]);
+
+        if (false) {
+          // combine with its mirror image
+          answer = answer.union(answer.rotateZ(180).setColor([1,.5,0,.5]));
+          //answer = answer.intersect(answer.rotateZ(180).setColor([1,.5,0,.5]));
+        }
       }
 
     }
