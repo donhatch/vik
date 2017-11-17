@@ -452,8 +452,127 @@ function main() {
         }
       }
 
-      // Each vertex in A produces a spherical patch in answer.
+      // Assuming it's a spherical *triangle*, perimeter should be a list of 3
+      // lists of points on unit sphere.  The first point in each list
+      // is the vertex, the remaining ones are subdivision points.
+      let computeSphericalPatch = (perimeter, resolutionInCaseOfFurtherSubdivision) => {
+        if (perimeter.length != 3) {
+          // We only know how to deal with a (subdivided) spherical triangle.
+          // So, triangulate.
+          // CBB: should pick triangulation smartly.  But for this application,
+          // it's a symmetric quad so it doesn't matter.
+          CHECK(perimeter.length === 4);
+          CHECK(resolutionInCaseOfFurtherSubdivision != -1);
+          let [ab,bc,cd,da] = perimeter;
+          let [a,b,c,d] = [ab[0],bc[0],cd[0],da[0]];
+          let angle = angleBetweenUnitVectors(a, c);
+          let nSubdivsHere = Math.max(1, Math.round(angle/(2*Math.PI)*resolutionInCaseOfFurtherSubdivision));
+          let additionalDiagonalPoints = [];
+          for (let i = 1; i < nSubdivsHere; ++i) {
+            additionalDiagonalPoints.push(slerp(a, c, angle, i/nSubdivsHere));
+          }
+          let ac = [a];
+          for (let i = 0; i < additionalDiagonalPoints.length; ++i) {
+            ac.push(additionalDiagonalPoints[i]);
+          }
+          let ca = [c];
+          for (let i = 0; i < additionalDiagonalPoints.length; ++i) {
+            ca.push(additionalDiagonalPoints[additionalDiagonalPoints.length-1-i]);
+          }
+          let answer0 = computeSphericalPatch([ab,bc,ca], -1);
+          let answer1 = computeSphericalPatch([ac,cd,da], -1);
+          let answer = [];
+          for (let normal of answer0) answer.push(normal);
+          for (let normal of answer1) answer.push(normal);
+          return answer;
+        }
+        CHECK(perimeter.length === 3);
 
+        let [v01,v12,v20] = perimeter;
+
+        // cycle until v12 is smallest
+        while (v01.length < v12.length || v20.length < v12.length) {
+          [v01,v12,v20] = [v12,v20,v01];
+        }
+
+        let gridPoints = [];
+        for (let iy = 0; iy <= Math.max(v01.length,v20.length); ++iy) {
+          gridPoints.push([]);
+          for (let ix = 0; ix <= v12.length; ++ix) {
+            gridPoints[iy].push(null);
+          }
+        }
+        for (let i = 0; i < v12.length; ++i) {
+          CHECK(gridPoints[0][i] === null);
+          gridPoints[0][i] = v12[i];
+        }
+        for (let i = 0; i < v01.length; ++i) {
+          CHECK(gridPoints[gridPoints.length-1-i][0] === null);
+          gridPoints[gridPoints.length-1-i][0] = v01[i];
+        }
+        for (let i = 0; i < v20.length-v01.length; ++i) {
+          CHECK(gridPoints[i+1][0] === null);
+          gridPoints[i+1][0] = v12[0];
+        }
+        for (let i = 0; i < v01.length-v20.length; ++i) {
+          CHECK(gridPoints[i][v12.length] === null);
+          gridPoints[i][v12.length] = v20[0];
+        }
+        for (let i = 0; i < v20.length; ++i) {
+          CHECK(gridPoints[Math.max(v01.length-v20.length,0)+i][v12.length] === null);
+          gridPoints[Math.max(v01.length-v20.length,0)+i][v12.length] = v20[i];
+        }
+        for (let i = 0; i < v12.length; ++i) {
+          CHECK(gridPoints[gridPoints.length-1][i+1] === null);
+          gridPoints[gridPoints.length-1][i+1] = v01[0];
+        }
+
+        for (let iy = 0; iy < gridPoints.length; ++iy) {
+          for (let ix = 0; ix < gridPoints[iy].length; ++ix) {
+            if (ix === 0 || iy === 0 || ix === gridPoints[iy].length-1 || iy === gridPoints.length-1) {
+              CHECK(gridPoints[iy][ix] !== null);
+            } else {
+              CHECK(gridPoints[iy][ix] === null);
+              let W = gridPoints[iy][0];
+              let E = gridPoints[iy][gridPoints[iy].length-1];
+              let S = gridPoints[0][ix];
+              let N = gridPoints[gridPoints.length-1][ix];
+              let SxN = S.cross(N);
+              let WxE = W.cross(E);
+              gridPoints[iy][ix] = normalizedCsgVector(WxE.cross(SxN));
+            }
+            CHECK(gridPoints[iy][ix] !== null);
+          }
+        }
+        let answer = [];
+        for (let iy = 0; iy+1 < gridPoints.length; ++iy) {
+          for (let ix = 0; ix+1 < gridPoints[iy].length; ++ix) {
+            let a = gridPoints[iy][ix];
+            let b = gridPoints[iy][ix+1];
+            let c = gridPoints[iy+1][ix+1];
+            let d = gridPoints[iy+1][ix];
+            if (c === d) {
+              answer.push([a,b,c]);
+            } else if (b === c) {
+              answer.push([a,b,d]);
+            } else if (a === d) {
+              answer.push([a,b,c]);
+            } else {
+              let volume = sixTimesTetVolume(a,b,c,d);
+              if (volume < 0.0) {
+                answer.push([a,b,c]);
+                answer.push([a,c,d]);
+              } else {
+                answer.push([a,b,d]);
+                answer.push([b,c,d]);
+              }
+            }
+          }
+        }
+        return answer;
+      };  // computeSphericalPatch
+
+      // Each vertex in A produces a spherical patch in answer.
       for (let iVert = 0; iVert < verts.length; ++iVert) {
         let theVertex = verts[iVert];
         let normals = [];
@@ -483,125 +602,6 @@ function main() {
         }
         //console.log("perimeter = "+JSON.stringify(perimeter));
 
-        // Assuming it's a spherical *triangle*, perimeter should be a list of 3
-        // lists of points on unit sphere.  The first point in each list
-        // is the vertex, the remaining ones are subdivision points.
-        let computeSphericalPatch = (perimeter, resolutionInCaseOfFurtherSubdivision) => {
-          if (perimeter.length != 3) {
-            // We only know how to deal with a (subdivided) spherical triangle.
-            // So, triangulate.
-            // CBB: should pick triangulation smartly.  But for this application,
-            // it's a symmetric quad so it doesn't matter.
-            CHECK(perimeter.length === 4);
-            CHECK(resolutionInCaseOfFurtherSubdivision != -1);
-            let [ab,bc,cd,da] = perimeter;
-            let [a,b,c,d] = [ab[0],bc[0],cd[0],da[0]];
-            let angle = angleBetweenUnitVectors(a, c);
-            let nSubdivsHere = Math.max(1, Math.round(angle/(2*Math.PI)*resolutionInCaseOfFurtherSubdivision));
-            let additionalDiagonalPoints = [];
-            for (let i = 1; i < nSubdivsHere; ++i) {
-              additionalDiagonalPoints.push(slerp(a, c, angle, i/nSubdivsHere));
-            }
-            let ac = [a];
-            for (let i = 0; i < additionalDiagonalPoints.length; ++i) {
-              ac.push(additionalDiagonalPoints[i]);
-            }
-            let ca = [c];
-            for (let i = 0; i < additionalDiagonalPoints.length; ++i) {
-              ca.push(additionalDiagonalPoints[additionalDiagonalPoints.length-1-i]);
-            }
-            let answer0 = computeSphericalPatch([ab,bc,ca], -1);
-            let answer1 = computeSphericalPatch([ac,cd,da], -1);
-            let answer = [];
-            for (let normal of answer0) answer.push(normal);
-            for (let normal of answer1) answer.push(normal);
-            return answer;
-          }
-          CHECK(perimeter.length === 3);
-
-          let [v01,v12,v20] = perimeter;
-
-          // cycle until v12 is smallest
-          while (v01.length < v12.length || v20.length < v12.length) {
-            [v01,v12,v20] = [v12,v20,v01];
-          }
-
-          let gridPoints = [];
-          for (let iy = 0; iy <= Math.max(v01.length,v20.length); ++iy) {
-            gridPoints.push([]);
-            for (let ix = 0; ix <= v12.length; ++ix) {
-              gridPoints[iy].push(null);
-            }
-          }
-          for (let i = 0; i < v12.length; ++i) {
-            CHECK(gridPoints[0][i] === null);
-            gridPoints[0][i] = v12[i];
-          }
-          for (let i = 0; i < v01.length; ++i) {
-            CHECK(gridPoints[gridPoints.length-1-i][0] === null);
-            gridPoints[gridPoints.length-1-i][0] = v01[i];
-          }
-          for (let i = 0; i < v20.length-v01.length; ++i) {
-            CHECK(gridPoints[i+1][0] === null);
-            gridPoints[i+1][0] = v12[0];
-          }
-          for (let i = 0; i < v01.length-v20.length; ++i) {
-            CHECK(gridPoints[i][v12.length] === null);
-            gridPoints[i][v12.length] = v20[0];
-          }
-          for (let i = 0; i < v20.length; ++i) {
-            CHECK(gridPoints[Math.max(v01.length-v20.length,0)+i][v12.length] === null);
-            gridPoints[Math.max(v01.length-v20.length,0)+i][v12.length] = v20[i];
-          }
-          for (let i = 0; i < v12.length; ++i) {
-            CHECK(gridPoints[gridPoints.length-1][i+1] === null);
-            gridPoints[gridPoints.length-1][i+1] = v01[0];
-          }
-
-          for (let iy = 0; iy < gridPoints.length; ++iy) {
-            for (let ix = 0; ix < gridPoints[iy].length; ++ix) {
-              if (ix === 0 || iy === 0 || ix === gridPoints[iy].length-1 || iy === gridPoints.length-1) {
-                CHECK(gridPoints[iy][ix] !== null);
-              } else {
-                CHECK(gridPoints[iy][ix] === null);
-                let W = gridPoints[iy][0];
-                let E = gridPoints[iy][gridPoints[iy].length-1];
-                let S = gridPoints[0][ix];
-                let N = gridPoints[gridPoints.length-1][ix];
-                let SxN = S.cross(N);
-                let WxE = W.cross(E);
-                gridPoints[iy][ix] = normalizedCsgVector(WxE.cross(SxN));
-              }
-              CHECK(gridPoints[iy][ix] !== null);
-            }
-          }
-          let answer = [];
-          for (let iy = 0; iy+1 < gridPoints.length; ++iy) {
-            for (let ix = 0; ix+1 < gridPoints[iy].length; ++ix) {
-              let a = gridPoints[iy][ix];
-              let b = gridPoints[iy][ix+1];
-              let c = gridPoints[iy+1][ix+1];
-              let d = gridPoints[iy+1][ix];
-              if (c === d) {
-                answer.push([a,b,c]);
-              } else if (b === c) {
-                answer.push([a,b,d]);
-              } else if (a === d) {
-                answer.push([a,b,c]);
-              } else {
-                let volume = sixTimesTetVolume(a,b,c,d);
-                if (volume < 0.0) {
-                  answer.push([a,b,c]);
-                  answer.push([a,c,d]);
-                } else {
-                  answer.push([a,b,d]);
-                  answer.push([b,c,d]);
-                }
-              }
-            }
-          }
-          return answer;
-        };  // computeSphericalPatch
 
         let sphericalPatchNormalTriples = computeSphericalPatch(perimeter, resolution);
         //console.log("sphericalPatchNormalTriples = "+JSON.stringify(sphericalPatchNormalTriples));
