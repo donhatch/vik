@@ -12,11 +12,6 @@ const getCommonArgs = require('./clip/getCommonArgs');
 let [inputFileNames, outputFormat, outputFileName] = getCommonArgs(process.argv, 2, 2);
 let [inputFileName, clipFileName] = inputFileNames;
 
-if (outputFormat === 'stl' || outputFormat === 'stla' || outputFormat === 'stlb') {
-  console.error("ERROR: stl output does not support colors (use amf or something)");
-  process.exit(1);
-}
-
 const jscad = require('@jscad/openjscad');
 const csg = require('@jscad/csg').CSG;
 const fs = require('fs')
@@ -35,7 +30,19 @@ Promise.all([jscad.compile(compilable, {}), jscad.compile(compilableClip, {})]).
   let answer = compiled[0];
   //process.stderr.write("answer = "+JSON.stringify(answer)+"\n");
 
+
   let clip = compiledClip[0];
+  let clips = clip;
+
+  if (true) {
+    // put a bar under it
+    let bar = csg.cube();  // centered at origin, unit radius
+    bar = bar.translate([-1,0,-1]);
+    bar = bar.scale([.65,4.7,.4]);
+    bar = bar.rotateZ(45);
+    clips = clips.union(bar);
+  }
+  clips = clips.translate([0,0,3.5]);
 
   let modelWidth = 20; // hard-coded in vik.jscad
   let t = modelWidth * Math.sqrt(.5);  // modelWidth=20 -> t=14.142135623730951
@@ -44,29 +51,19 @@ Promise.all([jscad.compile(compilable, {}), jscad.compile(compilableClip, {})]).
      t = 13.73866987452534;
   }
 
-  clip = clip.translate([t,t,1.5]);
+  clips = clips.translate([t,t,0]);
 
-  let clips = clip;
   if (true) {
-    clips = clip.union(clip.rotateZ(90).rotateY(90))
-                .union(clip.rotateZ(90).rotateY(90).rotateZ(90).rotateY(90));
+    // triplicate
+    clips = clips.union(clips.rotateZ(90).rotateY(90))
+                 .union(clips.rotateZ(90).rotateY(90).rotateZ(90).rotateY(90));
   }
 
-  let rotate60about111 = object => {
-    // rotate 60 degrees about 1,1,1, the stupid way:
-    //     rotate 1,1,1 to z axis
-    //     rotate 60 degrees about z axix
-    //     rotate z axis to 1,1,1
-    object = object.rotateZ(45);  // rotate axis 1,1,1 to yz plane
-    object = object.rotateX(Math.atan2(Math.sqrt(2),1)/Math.PI*180); // rotate axis to +z
-    object = object.rotateZ(-60);
-    object = object.rotateX(-Math.atan2(Math.sqrt(2),1)/Math.PI*180);
-    object = object.rotateZ(-45);
-    return object;
-  };
-
   if (true) {
-    clips = rotate60about111(clips);
+    // rotate 60 degrees about [1,1,1]
+    clips = clips.rotate(/*rotationCenter=*/[0,0,0],
+                         /*rotationAxis=*/[1,1,1],
+                         /*degrees=*/60);
   }
 
   if (false) {
@@ -90,7 +87,7 @@ Promise.all([jscad.compile(compilable, {}), jscad.compile(compilableClip, {})]).
     theCube = theCube.setColor([1,.5,0,.1]);
     theCube = theCube.scale([modelWidth,modelWidth,modelWidth]);
     theCube = theCube.scale([Math.sqrt(.5),Math.sqrt(.5),Math.sqrt(.5)]);
-    theCube = rotate60about111(theCube);
+    theCube = theCube.rotate(/*rotationCenter=*/[0,0,0], /*rotationAxis=*/[1,1,1], /*degrees=*/60);
     answer = answer.union(theCube);
   }
 
