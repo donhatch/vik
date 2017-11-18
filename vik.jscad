@@ -22,6 +22,7 @@ function main() {
 
     let showNonMagnets = true; // the actual model
     let showMagnets = false;
+    let showDoubleHeightMagnets = false;
 
     let swissCheese = false;  // set to true to force thinWallThickness to 0
 
@@ -946,6 +947,9 @@ function main() {
       }
       if (showMagnets) {
         clay = clay.union(makeTheCyls(cylHeight));
+      }
+      if (showDoubleHeightMagnets) {
+        clay = clay.union(makeTheCyls(cylHeight*2));
       }
     }
 
